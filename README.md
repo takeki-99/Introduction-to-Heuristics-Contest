@@ -1,4 +1,5 @@
 # Introduction-to-Heuristics-Contest
 Introduction to Heuristics Contestの提出を管理します
 
-1日先を貪欲に決める
+iからi+k日後までコンテストを何も開かなかった時のスコアが
+最大となるコンテストjを貪欲に選ぶ
