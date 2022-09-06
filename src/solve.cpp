@@ -2,6 +2,7 @@
 using namespace std;
 const int inf = 1e9 + 7;
 double START_CLOCK;
+double TL = 1.90;
 double runtime()
 {
     return (clock() - START_CLOCK) / CLOCKS_PER_SEC;
@@ -21,7 +22,7 @@ struct Solver
         // i日からi + k日まで何もコンテストを開かなかったときのスコアが最も高いコンテストjを選ぶ。
         for (int i = 0; i < D; i++)
         {
-            if (runtime() > 1.9)
+            if (runtime() > TL)
             {
                 break;
             }
@@ -90,8 +91,8 @@ int main()
 {
     START_CLOCK = clock();
 
-    // ifstream in("./input.in");
-    // cin.rdbuf(in.rdbuf());
+    ifstream in("./input.in");
+    cin.rdbuf(in.rdbuf());
 
     int D;
     cin >> D;
@@ -116,7 +117,7 @@ int main()
     // kを時間のあるかぎり探索
     for (int k = 0; k <= 26; k++)
     {
-        if (runtime() > 1.9)
+        if (runtime() > TL)
         {
             break;
         }
