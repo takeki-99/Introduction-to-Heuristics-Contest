@@ -15,35 +15,41 @@ struct Solver
     vector<vector<int>> s;
     Solver(int D, vector<int> c, vector<vector<int>> s) : D(D), c(c), s(s) {}
 
-    vector<int> solve(const int k)
+    vector<int> solve()
     {
-        vector<int> t(0);
+        // srand((unsigned)time(NULL));
+        srand(0);
 
-        // i日からi + k日まで何もコンテストを開かなかったときのスコアが最も高いコンテストjを選ぶ。
+        vector<int> ret(D);
+
         for (int i = 0; i < D; i++)
         {
-            if (runtime() > TL)
-            {
-                break;
-            }
-            int max_score = -inf;
-            int max_j = 0;
-            for (int j = 0; j < 26; j++)
-            {
-                t.push_back(j);
-                int tmp_score = evaluate(t, k);
-                if (max_score < tmp_score)
-                {
-                    max_score = tmp_score;
-                    max_j = j;
-                }
-                t.pop_back();
-            }
-            t.push_back(max_j);
+            ret[i] = rand() % 26;
         }
-        return t;
+
+        int score = calc_score(ret);
+
+        while (runtime() < TL)
+        {
+            int d = rand() % D;
+            int q = rand() % 26;
+            int old = ret[d];
+            ret[d] = q;
+            int tmp_score = calc_score(ret);
+            if (score < tmp_score)
+            {
+                score = tmp_score;
+            }
+            else
+            {
+                ret[d] = old;
+            }
+        }
+
+        return ret;
     }
 
+    /*
     // tの長さd(<=26)に合わせて計算する。
     // d日からd+k日まで何もコンテストを開かなかったときのスコアを返す。
     int evaluate(const vector<int> &t, const int k)
@@ -68,6 +74,7 @@ struct Solver
         }
         return score;
     }
+    */
 
     // tの長さ(<=26)に合わせて計算する。
     int calc_score(const vector<int> &t)
@@ -91,8 +98,8 @@ int main()
 {
     START_CLOCK = clock();
 
-    ifstream in("./input.in");
-    cin.rdbuf(in.rdbuf());
+    /* ifstream in("./input.in");
+    cin.rdbuf(in.rdbuf()); */
 
     int D;
     cin >> D;
@@ -112,29 +119,12 @@ int main()
 
     Solver solver(D, c, s);
 
-    int max_score = -inf;
-    vector<int> best_t;
-    // kを時間のあるかぎり探索
-    for (int k = 0; k <= 26; k++)
-    {
-        if (runtime() > TL)
-        {
-            break;
-        }
-        vector<int> tmp_t = solver.solve(k);
-        int tmp_score = solver.calc_score(tmp_t);
-        // 更新
-        if (max_score < tmp_score)
-        {
-            max_score = tmp_score;
-            swap(best_t, tmp_t);
-        }
-    }
-    cerr << "Score = " << solver.calc_score(best_t) << endl;
+    vector<int> t = solver.solve();
+    cerr << "Score = " << solver.calc_score(t) << endl;
     cerr << "time = " << runtime() << endl;
 
     for (int i = 0; i < D; i++)
     {
-        cout << best_t[i] + 1 << endl;
+        cout << t[i] + 1 << endl;
     }
 }
