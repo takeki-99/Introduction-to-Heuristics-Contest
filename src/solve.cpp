@@ -22,6 +22,7 @@ struct Solver
 
         vector<int> ret(D);
 
+        // random solution
         for (int i = 0; i < D; i++)
         {
             ret[i] = rand() % 26;
@@ -31,18 +32,36 @@ struct Solver
 
         while (runtime() < TL)
         {
-            int d = rand() % D;
-            int q = rand() % 26;
-            int old = ret[d];
-            ret[d] = q;
-            int tmp_score = calc_score(ret);
-            if (score < tmp_score)
+            if (rand() % 2)
             {
-                score = tmp_score;
+                int d = rand() % D;
+                int q = rand() % 26;
+                int old = ret[d];
+                ret[d] = q;
+                int tmp_score = calc_score(ret);
+                if (score < tmp_score)
+                {
+                    score = tmp_score;
+                }
+                else
+                {
+                    ret[d] = old;
+                }
             }
             else
             {
-                ret[d] = old;
+                int d1 = rand() % D;
+                int d2 = min(d1 + 1 + rand() % 16, D - 1);
+                swap(ret[d1], ret[d2]);
+                int tmp_score = calc_score(ret);
+                if (score < tmp_score)
+                {
+                    score = tmp_score;
+                }
+                else
+                {
+                    swap(ret[d1], ret[d2]);
+                }
             }
         }
 
@@ -98,8 +117,8 @@ int main()
 {
     START_CLOCK = clock();
 
-    /* ifstream in("./input.in");
-    cin.rdbuf(in.rdbuf()); */
+    // ifstream in("./input.in");
+    // cin.rdbuf(in.rdbuf());
 
     int D;
     cin >> D;
