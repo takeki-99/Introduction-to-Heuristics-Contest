@@ -10,10 +10,39 @@ double runtime()
 
 struct Solver
 {
-    int D;
-    vector<int> c;
-    vector<vector<int>> s;
-    Solver(int D, vector<int> c, vector<vector<int>> s) : D(D), c(c), s(s) {}
+
+    const int D;
+    const vector<int> c;
+    const vector<vector<int>> s;
+    Solver(int D, const vector<int> &c, const vector<vector<int>> &s) : D(D), c(c), s(s) {}
+
+    struct State
+    {
+        vector<int> t;
+        int score;
+        // 各コンテスト毎の開催日
+        vector<vector<int>> ds;
+        State(const Solver &solver, const vector<int> &t) : t(t)
+        {
+            ds.resize(26);
+            for (int i = 0; i < (int)t.size(); i++)
+            {
+                ds[t[i]].push_back(i);
+            }
+            score = solver.calc_score(t);
+        }
+
+        int cost(int d) const
+        {
+            return d * (d - 1) / 2;
+        }
+
+        // d日目をcontest new_iに変更する。
+        void change(int d, int new_i)
+        {
+            t[d] = new_i;
+        }
+    };
 
     vector<int> solve()
     {
@@ -96,7 +125,7 @@ struct Solver
     */
 
     // tの長さ(<=26)に合わせて計算する。
-    int calc_score(const vector<int> &t)
+    int calc_score(const vector<int> &t) const
     {
         int score = 0;
         vector<int> last(26, 0);
@@ -117,8 +146,8 @@ int main()
 {
     START_CLOCK = clock();
 
-    // ifstream in("./input.in");
-    // cin.rdbuf(in.rdbuf());
+    ifstream in("./input.in");
+    cin.rdbuf(in.rdbuf());
 
     int D;
     cin >> D;
