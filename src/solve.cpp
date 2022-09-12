@@ -21,13 +21,13 @@ struct Solver
         vector<int> t;
         int score;
         // 各コンテスト毎の開催日
-        vector<vector<int>> ds;
+        vector<vector<int>> ds_1; // 1-index
         State(const Solver &solver, const vector<int> &t) : t(t)
         {
-            ds.resize(26);
-            for (int i = 0; i < (int)t.size(); i++)
+            ds_1.resize(26);
+            for (int i = 0; i < solver.D; i++)
             {
-                ds[t[i]].push_back(i);
+                ds_1[t[i]].push_back(i + 1);
             }
             score = solver.calc_score(t);
         }
@@ -37,10 +37,29 @@ struct Solver
             return d * (d - 1) / 2;
         }
 
-        // d日目をcontest new_iに変更する。
-        void change(int d, int new_i)
+        // d_0日目(0-index)をcontest new_iに変更する。
+        void change(const Solver &solver, int d_0, int new_i)
         {
-            t[d] = new_i;
+            int old_i = t[d_0];
+            // old_iのd_0+1を指すイテレータ
+            auto old_i_it = find(ds_1[old_i].begin(), ds_1[old_i].end(), d_0 + 1);
+            int prev = (old_i_it == ds_1[old_i].begin() ? 0 : old_i_it[-1]);
+            int next = ((old_i_it + 1) == ds_1[old_i].end() ? solver.D + 1 : old_i_it[1]);
+            ds_1[old_i].erase(old_i_it);
+            // scoreを計算する
+            score -= (cost(next - prev) - cost(next - (d_0 + 1)) - cost(d_0 + 1 - prev)) * solver.c[old_i];
+
+            // new_iのd_0+1を指すイテレータ
+            auto new_i_it = lower_bound(ds_1[new_i].begin(), ds_1[new_i].end(), d_0 + 1);
+            prev = (new_i_it == ds_1[new_i].begin() ? 0 : new_i_it[-1]);
+            next = ((new_i_it + 1) == ds_1[new_i].end() ? solver.D + 1 : new_i_it[1]);
+            ds_1[new_i].insert(new_i_it, d_0 + 1);
+            // score を計算する
+            score += (cost(next - prev) - cost(next - (d_0 + 1)) - cost(d_0 + 1 - prev)) * solver.c[new_i];
+
+            // sの分
+            score += solver.s[d_0][new_i] - solver.s[d_0][old_i];
+            t[d_0] = new_i;
         }
     };
 
