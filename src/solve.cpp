@@ -52,7 +52,7 @@ struct Solver
             // new_iのd_0+1を指すイテレータ
             auto new_i_it = lower_bound(ds_1[new_i].begin(), ds_1[new_i].end(), d_0 + 1);
             prev = (new_i_it == ds_1[new_i].begin() ? 0 : new_i_it[-1]);
-            next = ((new_i_it + 1) == ds_1[new_i].end() ? solver.D + 1 : new_i_it[1]);
+            next = ((new_i_it) == ds_1[new_i].end() ? solver.D + 1 : *new_i_it);
             ds_1[new_i].insert(new_i_it, d_0 + 1);
             // score を計算する
             score += (cost(next - prev) - cost(next - (d_0 + 1)) - cost(d_0 + 1 - prev)) * solver.c[new_i];
@@ -76,38 +76,42 @@ struct Solver
             ret[i] = rand() % 26;
         }
 
-        int score = calc_score(ret);
-
+        State state(*this, ret);
+        int max_score = state.score;
         while (runtime() < TL)
         {
             if (rand() % 2)
             {
                 int d = rand() % D;
                 int q = rand() % 26;
-                int old = ret[d];
+                int old_q = ret[d];
+                state.change(*this, d, q);
                 ret[d] = q;
-                int tmp_score = calc_score(ret);
-                if (score < tmp_score)
+                if (max_score < state.score)
                 {
-                    score = tmp_score;
+                    max_score = state.score;
                 }
                 else
                 {
-                    ret[d] = old;
+                    state.change(*this, d, old_q);
+                    ret[d] = old_q;
                 }
             }
             else
             {
                 int d1 = rand() % D;
                 int d2 = min(d1 + 1 + rand() % 16, D - 1);
+                state.change(*this, d1, ret[d2]);
+                state.change(*this, d2, ret[d1]);
                 swap(ret[d1], ret[d2]);
-                int tmp_score = calc_score(ret);
-                if (score < tmp_score)
+                if (max_score < state.score)
                 {
-                    score = tmp_score;
+                    max_score = state.score;
                 }
                 else
                 {
+                    state.change(*this, d1, ret[d2]);
+                    state.change(*this, d2, ret[d1]);
                     swap(ret[d1], ret[d2]);
                 }
             }
