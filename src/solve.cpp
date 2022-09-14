@@ -2,18 +2,27 @@
 using namespace std;
 const int inf = 1e9 + 7;
 double START_CLOCK;
-double TL = 1.90;
-double runtime()
+double TimeLimit = 1.90;
+double getRuntime()
 {
     return (clock() - START_CLOCK) / CLOCKS_PER_SEC;
+}
+double rangeRand(double FLOAT_MIN = 0.0, double FLOAT_MAX = 1.0)
+{
+    return FLOAT_MIN + ((double)rand() / RAND_MAX) * (FLOAT_MAX - FLOAT_MIN);
 }
 
 struct Solver
 {
+    // for Annealing
+    const double T_h = 2e3;
+    const double T_l = 6e2;
 
+    // Input
     const int D;
     const vector<int> c;
     const vector<vector<int>> s;
+
     Solver(int D, const vector<int> &c, const vector<vector<int>> &s) : D(D), c(c), s(s) {}
 
     struct State
@@ -21,7 +30,8 @@ struct Solver
         vector<int> t;
         int score;
         // 各コンテスト毎の開催日
-        vector<vector<int>> ds_1; // 1-index
+        // 1-index
+        vector<vector<int>> ds_1;
         State(const Solver &solver, const vector<int> &t) : t(t)
         {
             ds_1.resize(26);
@@ -32,7 +42,7 @@ struct Solver
             score = solver.calc_score(t);
         }
 
-        int cost(int d) const
+        int gap_cost(int d) const
         {
             return d * (d - 1) / 2;
         }
@@ -41,23 +51,22 @@ struct Solver
         void change(const Solver &solver, int d_0, int new_i)
         {
             int old_i = t[d_0];
-            // old_iのd_0+1を指すイテレータ
+
+            // old_iのgap_costに関する処理
             auto old_i_it = find(ds_1[old_i].begin(), ds_1[old_i].end(), d_0 + 1);
             int prev = (old_i_it == ds_1[old_i].begin() ? 0 : old_i_it[-1]);
             int next = ((old_i_it + 1) == ds_1[old_i].end() ? solver.D + 1 : old_i_it[1]);
             ds_1[old_i].erase(old_i_it);
-            // scoreを計算する
-            score -= (cost(next - prev) - cost(next - (d_0 + 1)) - cost(d_0 + 1 - prev)) * solver.c[old_i];
+            score -= (gap_cost(next - prev) - gap_cost(next - (d_0 + 1)) - gap_cost(d_0 + 1 - prev)) * solver.c[old_i];
 
-            // new_iのd_0+1を指すイテレータ
+            // new_iのgap_costに関する処理
             auto new_i_it = lower_bound(ds_1[new_i].begin(), ds_1[new_i].end(), d_0 + 1);
             prev = (new_i_it == ds_1[new_i].begin() ? 0 : new_i_it[-1]);
             next = ((new_i_it) == ds_1[new_i].end() ? solver.D + 1 : *new_i_it);
             ds_1[new_i].insert(new_i_it, d_0 + 1);
-            // score を計算する
-            score += (cost(next - prev) - cost(next - (d_0 + 1)) - cost(d_0 + 1 - prev)) * solver.c[new_i];
+            score += (gap_cost(next - prev) - gap_cost(next - (d_0 + 1)) - gap_cost(d_0 + 1 - prev)) * solver.c[new_i];
 
-            // sの分
+            // sに関する処理
             score += solver.s[d_0][new_i] - solver.s[d_0][old_i];
             t[d_0] = new_i;
         }
@@ -65,7 +74,6 @@ struct Solver
 
     vector<int> solve()
     {
-        // srand((unsigned)time(NULL));
         srand(0);
 
         vector<int> ret(D);
@@ -77,78 +85,74 @@ struct Solver
         }
 
         State state(*this, ret);
-        int max_score = state.score;
-        while (runtime() < TL)
+
+        int best_score = state.score;
+        vector<int> best_t = state.t;
+
+        int loop_count = 0;
+        double T; // temperature for annealing
+
+        while (true)
         {
+            if (loop_count % 100 == 0)
+            {
+                double T_ratio = getRuntime() / TimeLimit;
+                if (T_ratio >= 1.0)
+                {
+                    break;
+                }
+                //　指数スケジューリングで温度Tを決める
+                T = pow(T_h, 1.0 - T_ratio) * pow(T_l, T_ratio);
+            }
+
+            int old_score = state.score;
             if (rand() % 2)
             {
+                // d日目をqに変更する
                 int d = rand() % D;
                 int q = rand() % 26;
-                int old_q = ret[d];
+                int old_q = state.t[d];
                 state.change(*this, d, q);
-                ret[d] = q;
-                if (max_score < state.score)
+
+                if ((old_score > state.score) &&
+                    (rangeRand() > exp((double)(state.score - old_score) / T)))
                 {
-                    max_score = state.score;
-                }
-                else
-                {
+                    // reset the change
                     state.change(*this, d, old_q);
-                    ret[d] = old_q;
                 }
             }
             else
             {
+                // d1日目とd2日目を交換する
                 int d1 = rand() % D;
                 int d2 = min(d1 + 1 + rand() % 16, D - 1);
-                state.change(*this, d1, ret[d2]);
-                state.change(*this, d2, ret[d1]);
-                swap(ret[d1], ret[d2]);
-                if (max_score < state.score)
+                int q1 = state.t[d1], q2 = state.t[d2];
+                state.change(*this, d1, q2);
+                state.change(*this, d2, q1);
+                if ((old_score > state.score) &&
+                    (rangeRand() > exp((double)(state.score - old_score) / T)))
                 {
-                    max_score = state.score;
-                }
-                else
-                {
-                    state.change(*this, d1, ret[d2]);
-                    state.change(*this, d2, ret[d1]);
-                    swap(ret[d1], ret[d2]);
+                    // reset the change
+                    state.change(*this, d1, q1);
+                    state.change(*this, d2, q2);
                 }
             }
+
+            // update best_score and best_t
+            if (best_score < state.score)
+            {
+                best_score = state.score;
+                best_t = state.t;
+            }
+            loop_count++;
         }
 
-        return ret;
+        return best_t;
     }
 
-    /*
-    // tの長さd(<=26)に合わせて計算する。
-    // d日からd+k日まで何もコンテストを開かなかったときのスコアを返す。
-    int evaluate(const vector<int> &t, const int k)
-    {
-        int score = 0;
-        vector<int> last(26, 0);
-        for (int i = 0; i < (int)t.size(); i++)
-        {
-            last[t[i]] = i + 1;
-            score += s[i][t[i]];
-            for (int j = 0; j < 26; j++)
-            {
-                score -= c[j] * (i + 1 - last[j]);
-            }
-        }
-        for (int i = (int)t.size(); i < min((int)t.size() + k, D); i++)
-        {
-            for (int j = 0; j < 26; j++)
-            {
-                score -= c[j] * (i + 1 - last[j]);
-            }
-        }
-        return score;
-    }
-    */
-
-    // tの長さ(<=26)に合わせて計算する。
-    int calc_score(const vector<int> &t) const
+    // tの長さ(<=D)に合わせて計算する。
+    int
+    calc_score(const vector<int> &t) const
     {
         int score = 0;
         vector<int> last(26, 0);
@@ -192,7 +196,7 @@ int main()
 
     vector<int> t = solver.solve();
     cerr << "Score = " << solver.calc_score(t) << endl;
-    cerr << "time = " << runtime() << endl;
+    cerr << "time = " << getRuntime() << endl;
 
     for (int i = 0; i < D; i++)
     {
