@@ -5,3 +5,6 @@ Introduction to Heuristics Contestの提出を管理します
 score: 112343321
 
 ## スコア計算を高速化した。
+
+## 方針:焼きなましを実装した
+SCORE: 125828357
