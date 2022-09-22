@@ -1,5 +1,5 @@
 # Introduction-to-Heuristics-Contest
-Introduction to Heuristics Contestの提出を管理します
+[Introduction to Heuristics Contest](https://atcoder.jp/contests/intro-heuristics)の提出を管理します
 
 ## 方針:
 
@@ -14,4 +14,4 @@ score: 112343321
 ## スコア計算を高速化
 
 ## 焼きなまし
-SCORE: 125828357
+SCORE: 125828357(2位相当)
